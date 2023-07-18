@@ -2,6 +2,7 @@
 
 import socket
 import sys
+import signal
 import threading
 
 server_socket = None
@@ -48,6 +49,7 @@ def main():
     print("Socket is listening.")
 
     # client list
+    global client_list
     client_list = {
         'PUBLISHER': [],
         'SUBSCRIBER': []
@@ -111,6 +113,19 @@ def client_handler(client_socket, client_address, client_list, client_topics):
         client_type, client_topic = client_details.split('-')
         client_list[client_type].remove(client_socket)
         del client_topics[client_socket]
-    
+
+def sigint_handler(signal, frame):
+    print("\nAdios Amigos...")
+
+    # close all pub and sub sockets
+    for client in client_list['PUBLISHER']:
+        client.send("terminate".encode())
+        client.close()
+    for client in client_list['SUBSCRIBER']:
+        client.send("terminate".encode())
+        client.close()
+    sys.exit(0)
+
 if __name__ == "__main__":
+    signal.signal(signal.SIGINT, sigint_handler)
     main()
